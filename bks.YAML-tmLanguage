@@ -93,6 +93,8 @@ repository:
     - include: '#number'
     - include: '#string'
     - include: '#boolean'
+    - include: '#line_comment'
+    - include: '#block_comment'
     - name: storage.type.bks
       match: \b(var|number|char|string|array|dictionary|class)\b
     - name: storage.modifier.bks
@@ -160,33 +162,25 @@ repository:
     - include: '#line_comment'
     - include: '#line_comment2'
     - include: '#block_comment'
-    - include: '#document_comment'
   line_comment:
     name: comment.line.double-slash.bks
+    comment: // .....
     match: (//).*$\n?
     captures:
       '1': {name: punctuation.definition.comment.bks}
   line_comment2:
     name: comment.line.colon.bks
+    comment: ; ......
     match: ^(;).*$\n?
     captures:
       '1': {name: punctuation.definition.comment.bks}
   block_comment:
-    name: punctuation.definition.comment.bks
+    name: comment.block.bks
+    comment: /* ..... */
     begin: /\*
-    beginCaptures:
+    captures:
       '0': {name: punctuation.definition.comment.bks}
     end: \*/
-    endCaptures:
-      '0': {name: punctuation.definition.comment.bks}
-  document_comment:
-    name: comment.block.documentation.bks
-    begin: /\*\*(?!/)
-    beginCaptures:
-      '0': {name: punctuation.definition.comment.bks}
-    end: \*/
-    endCaptures:
-      '0': {name: punctuation.definition.comment.bks}
 
   boolean:
    patterns:
