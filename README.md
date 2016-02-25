@@ -8,3 +8,10 @@ BKEgine Script语法高亮文件
 
 
 PS: bks.YAML-tmLanguage是它的YAML格式，可用AAAPackageDev编译。
+
+
+更新
+==========================
+
+添加最新版本的Sublime Text 3支持的sublime-syntax格式的语法高亮文件。
+

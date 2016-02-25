@@ -1,0 +1,471 @@
+%YAML 1.2
+---
+name: BKEngine Script
+file_extensions:
+  - bkscr
+scope: source.bks
+contexts:
+  main:
+    - include: comments
+    - include: label
+    - include: tag
+    - include: script
+
+  label:
+    - match: ^(\s*)\*(\s*)(\w+)
+      captures:
+        0: entity.name.function.bks
+        1: invalid.illegal.bks
+        2: invalid.illegal.bks
+        # 3: string.other.link.bks
+
+  tag:
+    - include: special-tag
+    - match: (\[)(\w+)
+      captures:
+        1: punctuation.definition.tag.begin.bks
+        2: entity.name.tag.bks
+      push:
+        - meta_scope: meta.tag.bks
+        - match: \]
+          captures:
+            0: punctuation.definition.tag.end.bks
+          pop: true
+        - include: tag-content
+    - match: (@)(\w+)
+      captures:
+        1: punctuation.definition.tag.at.bks
+        2: entity.name.tag.bks
+      push:
+        - meta_scope: meta.tag.bks
+        - match: \n
+          pop: true
+        - include: tag-comments
+        - include: tag-content
+  tag-content:
+    - match: \s([a-zA-Z_]+)
+      captures:
+        1: entity.other.attribute-name.bks
+    - match: (?<=)\b(basic_layer|message_layer)\b
+      scope: support.constant.bks
+    - include: support
+    - include: number
+    - include: color-values
+    - include: string
+    - include: language-variable
+    - include: language-constant
+    - include: brackets
+    - include: operators
+    - include: variable
+
+  special-tag:
+    - match: (@)(eval|if|elseif|return|tablegoto|else|elseif|endif|continue|break|next)\b
+      captures:
+        1: punctuation.definition.tag.at.bks
+        2: keyword.control.conditional
+      push:
+        - meta_scope: meta.specialtag.bks
+        - match: \n
+          pop: true
+        - include: condition-string
+        - include: tag-comments
+    - match: (\[)(eval|if|elseif|return|tablegoto|else|elseif|endif|continue|break|next)\b
+      captures:
+        1: punctuation.definition.tag.begin.bks
+        2: keyword.control.conditional
+      push:
+        - meta_scope: meta.specialtag.bks
+        - match: \]
+          pop: true
+        - include: condition-string
+
+  script:
+    - match: ^(\s*)#(?=[^#])
+      push:
+        - meta_scope: bkscript.line.bks
+        - match: \n
+          pop: true
+        - include: scriptStuff
+    - match: ^(\s*)##+
+      push:
+        - meta_scope: bkscript.block.bks
+        - match: ^(\s*)##+
+          pop: true
+        - include: scriptStuff
+  scriptStuff:
+    - include: keywords
+    - include: for
+    - include: switch
+    - include: function
+    - include: expression
+    - include: punctuation
+
+  expression:
+    - include: support
+    - include: number
+    - include: string
+    - include: language-variable
+    - include: language-constant
+    - include: comments
+    - include: brackets
+    - include: operators
+    - include: variable
+
+  keywords:
+    - match: (?<!\.)\b(return)\b
+      scope: keyword.control.flow.bks
+    - match: (?<!\.)\b(if|else)\b
+      scope: keyword.control.conditional.bks
+    - match: (?<!\.)\b(break|continue|do|while)\b
+      scope: keyword.control.loop.bks
+    - match: (?<!\.)\b(var|number|char|string|array|dictionary|class)\b
+      scope: storage.type.bks
+
+  string:
+    - match: "'"
+      captures:
+        0: punctuation.definition.string.begin.bks
+      push:
+        - meta_scope: string.quoted.single.bks
+        - match: (')|(\n)
+          captures:
+            1: punctuation.definition.string.end.bks
+            2: invalid.illegal.newline.bks
+          set: string-key
+        - include: string-content
+    - match: '"'
+      captures:
+        0: punctuation.definition.string.begin.bks
+      push:
+        - meta_scope: string.quoted.double.bks
+        - match: (")|(\n)
+          captures:
+            1: punctuation.definition.string.end.bks
+            2: invalid.illegal.newline.bks
+          set: string-key
+        - include: string-content
+  string-key:
+    - match: (?!:)
+      pop: true
+    - match: ':'
+      scope: punctuation.separator.key-value.bks
+  string-content:
+    - match: \\\s*\n
+      scope: constant.character.escape.newline.bks
+    - match: '\\(x[\da-fA-F]{2}|u[\da-fA-F]{4}|.)'
+      scope: constant.character.escape.bks
+
+  condition-string:
+    - match: "'"
+      captures:
+        0: punctuation.definition.string.begin.bks
+      push:
+        - match: (')|(\n)
+          captures:
+            1: punctuation.definition.string.end.bks
+            2: invalid.illegal.newline.bks
+          set: string-key
+        - include: condition-string-stuff
+    - match: '"'
+      captures:
+        0: punctuation.definition.string.begin.bks
+      push:
+        - match: (")|(\n)
+          captures:
+            1: punctuation.definition.string.end.bks
+            2: invalid.illegal.newline.bks
+          set: string-key
+        - include: condition-string-stuff
+  condition-string-stuff:
+    - include: support
+    - include: number
+    - include: language-variable
+    - include: language-constant
+    - include: brackets
+    - include: operators
+    - include: variable
+
+  brackets:
+    - include: round-brackets
+    - include: square-brackets
+    - include: curly-brackets
+  round-brackets:
+    - match: \(
+      captures:
+        0: meta.brace.round.bks
+      push:
+        - meta_scope: meta.group.braces.round
+        - match: \)
+          captures:
+            0: meta.brace.round.bks
+          pop: true
+        - include: expression
+    - match: \)
+      scope: invalid.illegal.stray.brace.round.bks
+  square-brackets:
+    - match: '\['
+      captures:
+        0: meta.brace.square.bks
+      push:
+        - meta_scope: meta.group.braces.square
+        - match: '\]'
+          captures:
+            0: meta.brace.square.bks
+          pop: true
+        - include: expression
+  curly-brackets:
+    - match: '\{'
+      captures:
+        0: meta.brace.curly
+      push:
+        - meta_scope: meta.group.braces.curly
+        - match: '\}'
+          captures:
+            0: meta.brace.curly.bks
+          pop: true
+        - include: scriptStuff
+
+  comments:
+    - match: /\*\*(?!/)
+      captures:
+        0: punctuation.definition.comment.bks
+      push:
+        - meta_scope: comment.block.documentation.bks
+        - match: \*/
+          captures:
+            0: punctuation.definition.comment.bks
+          pop: true
+    - match: /\*
+      captures:
+        0: punctuation.definition.comment.bks
+      push:
+        - meta_scope: comment.block.bks
+        - match: \*/
+          captures:
+            0: punctuation.definition.comment.bks
+          pop: true
+    - match: //
+      scope: punctuation.definition.comment.bks
+      push:
+        - meta_scope: comment.line.double-slash.bks
+        - match: \n
+          pop: true
+    - match: ^;
+      scope: punctuation.definition.comment.bks
+      push:
+        - meta_scope: comment.line.colon.bks
+        - match: \n
+          pop: true
+  tag-comments:
+    - match: //
+      scope: punctuation.definition.comment.bks
+      set:
+        - meta_scope: comment.line.double-slash.bks
+        - match: \n
+          pop: true
+    - match: ^;
+      scope: punctuation.definition.comment.bks
+      set:
+        - meta_scope: comment.line.colon.bks
+        - match: \n
+          pop: true
+
+  number:
+    - match: '(?i)(?:\B[-+]|\b)0x[0-9a-f]*\.(\B|\b[0-9]+)'
+      scope: invalid.illegal.numeric.hex.bks
+    - match: '(?:\B[-+]|\b)0[0-9]+\.(\B|\b[0-9]+)'
+      scope: invalid.illegal.numeric.octal.bks
+    - match: |-
+        (?xi)
+        (?:\B[-+])?
+        (?:
+          \b0b[0-1]*|                 # binary
+          \b0o[0-7]*|                 # octal
+          \b0x[0-9a-f]*|              # hex
+          (
+            \B\.[0-9]+|               # e.g. .999
+            \b[0-9]+(\.[0-9]*)?       # e.g. 999.999, 999. or 999
+          )(e[-+]?[0-9]+)?            # e.g. e+123, E-123
+        )
+      scope: constant.numeric.bks
+    - match: '(?:\B[-+]|\b)(Infinity)\b'
+      scope: constant.language.infinity.bks
+
+  operators:
+    - match: (?<!\.)\b(delete|in|instanceof|new|of|typeof|void|with)\b
+      scope: keyword.operator.bks
+    - match: |-
+        (?x)
+        !(?!=)| # logical-not     right-to-left   right
+        &&    | # logical-and     left-to-right   both
+        \|\|  | # logical-or      left-to-right   both
+      scope: keyword.operator.logical.bks
+    - match: |-
+        (?x)
+        =(?!=)| # assignment      right-to-left   both
+      scope: keyword.operator.assignment.bks
+    - match: |-
+        (?x)
+        %=   | # assignment      right-to-left   both
+        &=   | # assignment      right-to-left   both
+        \*=  | # assignment      right-to-left   both
+        \+=  | # assignment      right-to-left   both
+        -=   | # assignment      right-to-left   both
+        /=   | # assignment      right-to-left   both
+        \^=  | # assignment      right-to-left   both
+        \|=  | # assignment      right-to-left   both
+        <<=  | # assignment      right-to-left   both
+        >>=  | # assignment      right-to-left   both
+        >>>= | # assignment      right-to-left   both
+      scope: keyword.operator.assignment.augmented.bks
+    - match: |-
+        (?x)
+        ~    | # bitwise-not     right-to-left   right
+        <<   | # bitwise-shift   left-to-right   both
+        >>>  | # bitwise-shift   left-to-right   both
+        >>   | # bitwise-shift   left-to-right   both
+        &    | # bitwise-and     left-to-right   both
+        \^   | # bitwise-xor     left-to-right   both
+        \|     # bitwise-or      left-to-right   both
+      scope: keyword.operator.bitwise.bks
+    - match: |-
+        (?x)
+        <=   | # relational      left-to-right   both
+        >=   | # relational      left-to-right   both
+        <    | # relational      left-to-right   both
+        >      # relational      left-to-right   both
+      scope: keyword.operator.relational.bks
+    - match: |-
+        (?x)
+        ===  | # equality        left-to-right   both
+        !==  | # equality        left-to-right   both
+        ==   | # equality        left-to-right   both
+        !=     # equality        left-to-right   both
+      scope: keyword.operator.comparison.bks
+    - match: |-
+        (?x)
+        --   | # decrement       n/a             right-or-left
+        \+\+ | # increment       n/a             right-or-left
+        /    | # division        left-to-right   both
+        %    | # modulus         left-to-right   both
+        \*   | # multiplication  left-to-right   both
+        \+   | # addition        left-to-right   both
+        -      # subtraction     left-to-right   both
+      scope: keyword.operator.arithmetic.bks
+    - match: '\?|:'
+      scope: keyword.operator.ternary.bks
+    - match: (?<!\.)\.\.\.
+      scope: keyword.operator.spread.bks
+    - match: \.
+      scope: keyword.operator.accessor.bks
+  
+  punctuation:
+    - match: \;
+      scope: punctuation.terminator.statement.bks
+    - match: ","
+      scope: meta.delimiter.comma.bks
+
+  language-constant:
+    - match: (?<!\.)\btrue\b
+      scope: constant.language.boolean.true.bks
+    - match: (?<!\.)\bfalse\b
+      scope: constant.language.boolean.false.bks
+    - match: (?<!\.)\bnull\b
+      scope: constant.language.null.bks
+    - match: (?<!\.)\bundefined\b
+      scope: constant.language.undefined.bks
+    - match: (?<!\.)\bNaN\b
+      scope: constant.language.nan.bks
+
+  language-variable:
+    - match: (?<!(?<!\.\.)\.)\b(super)\b
+      scope: variable.language.super.bks
+    - match: (?<!(?<!\.\.)\.)\b(this)\b
+      scope: variable.language.this.bks
+    - match: (?<!(?<!\.\.)\.)\b(self)\b
+      scope: variable.language.self.bks
+    - match: (?<=\.)\b(constructor)\b
+      scope: variable.language.constructor.bks
+
+  support:
+    - match: \b(Date|Math|Regex|Script|System|SaveData|Channel|History|Timer|DownloadManager|Json|Network)\b
+      scope: support.class.builtin.bks
+    - match: (?<!\.)\b(Sprite|Live2DSprite)\b(?=\()
+      scope: support.function.builtin.bks
+    - match: (?<!\.)\b(log|print|eval|range|random|itoa|itoa2|time|hash|hash16|saveFile|loadFile|appendFile|evalFile|toString|fileExist|Sprite|Live2DSprite)\b(?=\()
+      scope: support.function.bks
+    - match: (?<=\.)(shift|sort|splice|unshift|pop|push|reverse)\b(?=\()
+      scope: support.function.mutator.bks
+    - match: (?<!\.)\b(sf|f|tf)\b
+      scope: support.type.object.bks
+
+  variable:
+    - match: '[A-Z][_\dA-Z]*\b'
+      scope: variable.other.constant.js
+    - match: |-
+        (?x)
+        \b([A-Z][\w]*)\s*(\.)
+        ([_a-zA-Z][\w]*)
+      scope: meta.property.class.js
+      captures:
+        1: variable.other.class.js
+        2: keyword.operator.accessor.js
+        3: variable.other.property.static.js
+    - match: '(?<!\.)[_a-zA-Z][\w]*\s*(?=[\[\.])'
+      scope: variable.other.object.js
+    - match: '(?<=\.)\s*[_a-zA-Z][\w]*'
+      scope: meta.property.object.js
+    - match: '[_a-zA-Z][\w]*'
+      scope: variable.other.readwrite.js
+
+  color-values:
+    - match: '(#)([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b'
+      scope: constant.other.color.rgb-value.css
+
+  function:
+    - match: |-
+        (?x)
+        \s*(function)(?:(?=\s|[(]))
+        \s*([_$a-zA-Z][$\w]*)?\s*
+      captures:
+        1: storage.type.function.js
+        2: entity.name.function.js
+      push:
+        - meta_scope: meta.function.js
+        - match: (?<=\))
+          pop: true
+        - include: function-declaration-parameters
+    - match: |-
+        (?x)
+        (\b[_$a-zA-Z][$\w]*)
+        \s*=
+        \s*(function)(?:(?=\s*|[(]))
+        \s*([_$a-zA-Z][$\w]*)?\s*
+      captures:
+        1: variable.other.readwrite.js entity.name.function.js
+        2: storage.type.function.js
+        3: entity.name.function.js
+      push:
+        - meta_scope: meta.function.js
+        - match: (?<=\))
+          pop: true
+        - include: function-declaration-parameters
+    - match: |-
+        (?x)
+        (\b_?[a-zA-Z_?.$]*)?
+        (\.)([_$a-zA-Z][$\.\w]*)
+        \s*(=)
+        \s*(function)(?:(?=\s*|[(]))
+        \s*([_$a-zA-Z][$\w]*)?\s*
+      captures:
+        1: support.class.js
+        2: keyword.operator.accessor.js
+        3: entity.name.function.js
+        4: keyword.operator.js
+        6: storage.type.function.js
+        8: entity.name.function.js
+      push:
+        - meta_scope: meta.function.static.js
+        - match: (?<=\))
+          pop: true
+        - include: function-declaration-parameters

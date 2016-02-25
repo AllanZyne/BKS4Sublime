@@ -1,0 +1,38 @@
+// SYNTAX TEST "Packages/BKS4Sublime/bks.sublime-syntax"
+*main
+[bgm file="sound/bgm/tam-n01" loop=true]
+
+[basic_dialogbox]
+[sprite index=0 file="image/bg/bg441a_1280"]
+[addto index=0 target=basic_layer pos=[0,0] zorder=0 opacity=255]
+
+[sprite index=1 file="image/character/A/2_happy"]
+[addto index=1 target=basic_layer zorder=10 pos=[400,120] opacity=255]
+[sprite index=2 file="image/character/B/7_wordless"]
+[addto index=2 target=basic_layer zorder=10 pos=[640,120] opacity=255]
+
+【凉子】[r]
+抱歉，等很久了么？？[p]
+【真由】[r]
+啊,真是的，凉子你怎么那么慢？[p]
+
+[select file="image/menu/textwindow/2" text=["要好好遵守约定啊","为什么会迟到呢"] label=["*A","*B"]]
+
+*A
+【真由】[r]
+下一次可要好好遵守约定啊。[p]
+#var ask=-1;
+[jump label="*continue"]
+
+*B
+【真由】[r]
+平日里你不是很守时的吗？今天怎么迟到了？[p]
+#var ask=1;
+[jump label="*continue"]
+
+*continue
+@if "ask>0"
+@jump label="*ask"
+@else
+@jump label="*no_ask"
+@endif
