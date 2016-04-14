@@ -43,11 +43,9 @@ contexts:
         - include: tag-comments
         - include: tag-content
   tag-content:
-    - match: \s([a-zA-Z_]+)
+    - match: \s([a-zA-Z_0-9]+)
       captures:
         1: entity.other.attribute-name.bks
-    - match: (?<=)\b(basic_layer|message_layer)\b
-      scope: support.constant.bks
     - include: support
     - include: number
     - include: color-values
@@ -85,6 +83,7 @@ contexts:
         - meta_scope: bkscript.line.bks
         - match: \n
           pop: true
+        - include: tag-comments
         - include: scriptStuff
     - match: ^(\s*)##+
       push:
@@ -398,6 +397,8 @@ contexts:
       scope: support.function.mutator.bks
     - match: (?<!\.)\b(sf|f|tf)\b
       scope: support.type.object.bks
+    - match: (?<=)\b(basic_layer|message_layer)\b
+      scope: support.constant.bks
 
   variable:
     - match: '[A-Z][_\dA-Z]*\b'
